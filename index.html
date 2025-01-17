@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>整天吃喝玩樂的手術室醫院-醫師看診系統</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(145deg, #f2f2f2, #ffffff);
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 0 0 20px 20px;
+        }
+        header h1 {
+            font-size: 2.5rem;
+        }
+        main {
+            padding: 2rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .section h2 {
+            color: #4CAF50;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .output {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #e8f5e9;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            color: #333;
+        }
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .print-btn {
+            background-color: #008CBA;
+            margin-top: 1rem;
+            display: block;
+            width: 100%;
+            font-size: 1rem;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .print-btn:hover {
+            background-color: #007B8F;
+        }
+        .printable {
+            padding: 30px;
+            margin: 0 auto;
+            background-color: #fff;
+            width: 80%;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            font-size: 24px;
+        }
+        .printable h2 {
+            text-align: center;
+            color: #4CAF50;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .printable p {
+            line-height: 2;
+            font-size: 28px;
+            margin: 20px 0;
+        }
+        .printable svg {
+            display: block;
+            margin: 20px auto;
+        }
+
+        @media print {
+            body {
+                font-size: 1.6rem;
+                line-height: 2rem;
+            }
+            .printable h2 {
+                font-size: 36px;
+            }
+            .printable p {
+                font-size: 30px;
+            }
+            .print-btn {
+                display: none;
+            }
+            .section {
+                display: block;
+            }
+            .printable {
+                width: 100%;
+                padding: 50px;
+                page-break-before: always;
+                page-break-after: always;
+            }
+        }
+
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>整天吃喝玩樂的手術室醫院 - 醫院系統</h1>
+    </header>
+    <main>
+        <section id="call-number" class="section">
+            <h2>叫號</h2>
+            <form onsubmit="callNumber(event)">
+                <label for="number-input">輸入號碼：</label>
+                <input type="number" id="number-input" name="number-input" required>
+                <button type="submit">叫號</button>
+            </form>
+            <button onclick="callNextNumber()">叫下一號</button>
+            <div id="current-number" class="output">目前無叫號。</div>
+        </section>
+
+        <section id="prescription" class="section">
+            <h2>開藥單</h2>
+            <form onsubmit="submitPrescription(event)">
+                <label for="patient-id">身分證字號：</label>
+                <input type="text" id="patient-id" name="patient-id" required><br><br>
+
+                <label for="patient-name">病患姓名：</label>
+                <input type="text" id="patient-name" name="patient-name" required><br><br>
+
+                <label for="medications">藥物名稱：</label>
+                <input type="text" id="medications" name="medications" placeholder="以逗號分隔多個藥品" required><br><br>
+
+                <label for="dosages">藥量（mmg）：</label>
+                <input type="text" id="dosages" name="dosages" placeholder="以逗號分隔藥量" required><br><br>
+
+                <label for="method">用藥方式：</label>
+                <select id="method" name="method" required>
+                    <option value="膠囊">膠囊</option>
+                    <option value="錠劑">錠劑</option>
+                    <option value="藥粉">藥粉</option>
+                    <option value="藥水">藥水</option>
+                    <option value="藥膏">藥膏</option>
+                    <option value="針劑">針劑</option>
+                </select><br><br>
+
+                <button type="submit">提交藥單</button>
+            </form>
+            <div id="prescription-output" class="output">目前無藥單。</div>
+            <div id="barcode-output" class="barcode"></div>
+        </section>
+
+        <section id="doctor-advice" class="section">
+            <h2>醫生叮嚀</h2>
+            <textarea id="advice-text" rows="5" cols="50" placeholder="醫生叮嚀內容"></textarea><br><br>
+            <button onclick="saveAdvice()">保存叮嚀</button>
+            <div id="advice-output" class="output">目前無叮嚀。</div>
+        </section>
+
+        <section id="medication-advice" class="section">
+            <h2>用藥建議</h2>
+            <button onclick="generateMedicationAdvice()">隨機獲取用藥建議</button>
+            <div id="medication-advice-output" class="output">目前無建議。</div>
+        </section>
+
+        <section id="billing" class="section">
+            <h2>批價單</h2>
+            <form onsubmit="generateBilling(event)">
+                <label for="service">服務項目：</label>
+                <input type="text" id="service" name="service" required><br><br>
+
+                <label for="cost">金額：</label>
+                <input type="number" id="cost" name="cost" required><br><br>
+
+                <button type="submit">生成批價單</button>
+            </form>
+            <div id="billing-output" class="output">目前無批價單。</div>
+        </section>
+
+        <section id="summary" class="section">
+            <h2>醫療總結單</h2>
+            <button class="print-btn" onclick="generateSummary()">生成總結單</button>
+            <div id="summary-output" class="output">
+                <div class="summary-section printable">
+                    <h2>病患資訊總結單</h2>
+                    <div id="summary-content" class="summary-content">
+                        <!-- 這裡會生成總結單 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let prescriptionData = {};
+
+        function callNumber(event) {
+            event.preventDefault();
+            const numberInput = document.getElementById('number-input');
+            const currentNumber = document.getElementById('current-number');
+            currentNumber.textContent = `目前叫號：${numberInput.value}`;
+        }
+
+        function callNextNumber() {
+            const currentNumber = document.getElementById('current-number');
+            let currentNum = parseInt(currentNumber.textContent.replace('目前叫號：', '')) || 0;
+            currentNum++;
+            currentNumber.textContent = `目前叫號：${currentNum}`;
+        }
+
+        function submitPrescription(event) {
+            event.preventDefault();
+            const patientId = document.getElementById('patient-id').value;
+            const patientName = document.getElementById('patient-name').value;
+            const medications = document.getElementById('medications').value;
+            const dosages = document.getElementById('dosages').value;
+            const method = document.getElementById('method').value;
+
+            prescriptionData = {
+                patientId,
+                patientName,
+                medications,
+                dosages,
+                method
+            };
+
+            const prescriptionOutput = document.getElementById('prescription-output');
+            prescriptionOutput.innerHTML = `
+                身分證字號：${patientId}<br>
+                病患姓名：${patientName}<br>
+                藥物名稱：${medications}<br>
+                藥量（mmg）：${dosages}<br>
+                用藥方式：${method}
+            `;
+
+            JsBarcode('#barcode-output', patientId);
+        }
+
+        function saveAdvice() {
+            const adviceText = document.getElementById('advice-text').value;
+            const adviceOutput = document.getElementById('advice-output');
+            adviceOutput.textContent = `醫生叮嚀：${adviceText}`;
+        }
+
+        function generateMedicationAdvice() {
+            const advices = [
+                "用藥後勿進行劇烈運動。",
+                "請遵從醫囑，按時服藥。",
+                "避免食用辛辣及刺激性食物。",
+                "服藥後若有不適，請及時就醫。",
+                "用藥期間建議多休息並保持充足睡眠。"
+            ];
+            const randomAdvice = advices[Math.floor(Math.random() * advices.length)];
+            document.getElementById('medication-advice-output').textContent = randomAdvice;
+        }
+
+        function generateBilling(event) {
+            event.preventDefault();
+            const service = document.getElementById('service').value;
+            const cost = document.getElementById('cost').value;
+
+            const billingOutput = document.getElementById('billing-output');
+            billingOutput.innerHTML = `服務項目：${service}<br>金額：${cost}元`;
+        }
+
+        function generateSummary() {
+            const summaryContent = document.getElementById('summary-content');
+            summaryContent.innerHTML = `
+                身分證字號：${prescriptionData.patientId}<br>
+                病患姓名：${prescriptionData.patientName}<br>
+                藥物名稱：${prescriptionData.medications}<br>
+                藥量（mmg）：${prescriptionData.dosages}<br>
+                用藥方式：${prescriptionData.method}<br><br>
+                醫生叮嚀：${document.getElementById('advice-output').textContent}<br><br>
+                用藥建議：${document.getElementById('medication-advice-output').textContent}<br><br>
+                批價單：<br>服務項目：${document.getElementById('service').value}<br>金額：${document.getElementById('cost').value}元
+            `;
+        }
+    </script>
+</body>
+</html>
